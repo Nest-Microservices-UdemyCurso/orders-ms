@@ -6,7 +6,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { OrderStatus, PrismaClient } from '@prisma/client';
+import { PrismaClient, OrderStatus } from '@prisma/client';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { ChangeOrderStatusDto, PaginationDto } from 'src/common/dto';
 import { NATS_SERVICE } from 'src/config/services';
@@ -30,18 +30,21 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
   async create(createOrderDto: CreateOrderDto) {
     try {
       const productsIds = createOrderDto.items.map((item) => item.productId);
-      
+
       const products: any[] = await firstValueFrom(
         this.productsClient.send('validate_products', productsIds),
       );
 
       const totalAmount = createOrderDto.items.reduce((acc, item) => {
-        const product = products.find(p => p.id === item.productId);
-        
+        const product = products.find((p) => p.id === item.productId);
+
         return acc + product?.price * item.quantity;
       }, 0);
 
-      const totalItems = createOrderDto.items.reduce((acc, item) => acc + item.quantity, 0);
+      const totalItems = createOrderDto.items.reduce(
+        (acc, item) => acc + item.quantity,
+        0,
+      );
 
       const order = await this.order.create({
         data: {
@@ -57,22 +60,21 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
               })),
             },
           },
-        }, 
+        },
         include: {
           OrderItem: {
             select: {
               price: true,
               quantity: true,
               productId: true,
-            }
+            },
           },
-        }
+        },
       });
 
       return {
         ...order,
-      }
-      
+      };
     } catch (error) {
       throw new RpcException({
         status: HttpStatus.BAD_REQUEST,
@@ -82,26 +84,30 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
   }
 
   async findAll(paginationDto: PaginationDto) {
-    const { page, limit, status } = paginationDto;
-    const totalPages = await this.order.count();
-    const lastPage = Math.ceil(totalPages / limit);
+    try {
+      const { page, limit, status } = paginationDto;
+      const totalPages = await this.order.count();
+      const lastPage = Math.ceil(totalPages / limit);
 
-    const statusFilter = status ? { status: status } : {};
+      const statusFilter = status ? { status: status } : {};
 
-    return {
-      data: await this.order.findMany({
-        skip: (page - 1) * limit,
-        take: limit,
-        where: {
-          ...statusFilter,
+      return {
+        data: await this.order.findMany({
+          skip: (page - 1) * limit,
+          take: limit,
+          where: {
+            ...statusFilter,
+          },
+        }),
+        meta: {
+          total: totalPages,
+          lastPage: lastPage,
+          page: page,
         },
-      }),
-      meta: {
-        total: totalPages,
-        lastPage: lastPage,
-        page: page,
-      },
-    };
+      };
+    } catch (error) {
+      throw new RpcException(error);
+    }
   }
 
   async findOne(id: string) {

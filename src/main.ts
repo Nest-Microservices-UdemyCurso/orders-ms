@@ -5,15 +5,17 @@ import { envs } from './config/envs';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 
 async function bootstrap() {
-  
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, {
-    transport: Transport.NATS,
-    options: {
-      servers: envs.natsServers
-    }
-  });
+  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
+    AppModule,
+    {
+      transport: Transport.NATS,
+      options: {
+        servers: envs.natsServers,
+      },
+    },
+  );
   const logger = new Logger('Bootstrap of Orders Microservice');
-  
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -22,6 +24,6 @@ async function bootstrap() {
   );
 
   await app.listen();
-  logger.log('Microservice running on port ' + envs.port);  
+  logger.log('Microservice running on port ' + envs.port);
 }
 bootstrap();

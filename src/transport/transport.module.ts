@@ -10,7 +10,8 @@ import { NATS_SERVICE } from 'src/config/services';
         name: NATS_SERVICE,
         transport: Transport.NATS,
         options: {
-            servers: envs.natsServers
+          servers: [process.env.NATS_SERVER || 'nats://nats-server:4222'], // Esto es para desplegar
+          // servers: envs.natsServers // Para local
         },
       },
     ]),
@@ -21,7 +22,8 @@ import { NATS_SERVICE } from 'src/config/services';
         name: NATS_SERVICE,
         transport: Transport.NATS,
         options: {
-            servers: envs.natsServers
+          servers: [process.env.NATS_SERVER || 'nats://nats-server:4222'], // Esto es para desplegar
+          // servers: envs.natsServers
         },
       },
     ]),

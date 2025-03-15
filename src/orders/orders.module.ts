@@ -6,6 +6,6 @@ import { TransportModule } from 'src/transport/transport.module';
 @Module({
   controllers: [OrdersController],
   providers: [OrdersService],
-  imports: [TransportModule],
+  imports: [ TransportModule ],
 })
 export class OrdersModule {}
